@@ -1,4 +1,4 @@
-# dapp-ipci-robonomics
+# dapp smart building offsetting
 
 ## Project setup
 ```
