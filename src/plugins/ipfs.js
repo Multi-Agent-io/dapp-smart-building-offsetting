@@ -1,4 +1,4 @@
-import Crust from "./utils/crust";
+import Crust from "../utils/crust";
 
 export default {
   install: app => {

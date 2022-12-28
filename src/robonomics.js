@@ -1,8 +1,4 @@
-import keyring from "@polkadot/ui-keyring";
-import {
-  AccountManagerUi as AccountManager,
-  Robonomics
-} from "robonomics-interface";
+import { Robonomics } from "robonomics-interface";
 
 const config = {
   endpoint:
@@ -86,6 +82,5 @@ const config = {
 console.log(config);
 
 const robonomics = new Robonomics(config);
-robonomics.setAccountManager(new AccountManager(keyring));
 
 export default robonomics;

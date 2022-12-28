@@ -7,26 +7,24 @@
 
       <div>
         <h3>Owner account</h3>
-
         <input v-model="owner" />
-
         <div v-if="subscription.isActive.value" class="success">
-          Subscription active till {{ subscription.validUntilFormat.value }}
+          Subscription active till
+          {{ $filters.date(subscription.validUntil.value) }}
         </div>
         <div v-else class="error">No active subsription</div>
       </div>
 
       <div>
         <h3>Controller</h3>
-
         <div>
           <select v-model="controller">
             <option
-              v-for="(item, key) in devices"
+              v-for="(item, key) in subscription.devices.value"
               :key="key"
-              :value="item.address"
+              :value="item"
             >
-              {{ item.address.substr(0, 5) }}...{{ item.address.substr(-5) }}
+              {{ item }}
             </option>
           </select>
         </div>
@@ -43,7 +41,6 @@
 </template>
 
 <script>
-import { useDevices } from "@/hooks/useDevices";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Keyring } from "@polkadot/keyring";
 import { encodeAddress } from "@polkadot/util-crypto";
@@ -57,11 +54,9 @@ export default {
 
     const subscription = useSubscription(owner);
 
-    const { devices, loadDevices } = useDevices(owner);
-
-    watch(devices, () => {
-      if (devices.value.length) {
-        controller.value = devices.value[0].address;
+    watch(subscription.devices, () => {
+      if (subscription.devices.value.length) {
+        controller.value = subscription.devices.value[0];
       } else {
         controller.value = "";
       }
@@ -71,9 +66,7 @@ export default {
       controller,
       seed,
       owner,
-      subscription,
-      devices,
-      loadDevices
+      subscription
     };
   },
   emits: ["owner", "controller"],
@@ -106,10 +99,14 @@ export default {
       immediate: true,
       handler() {
         if (this.owner) {
-          this.$emit("owner", encodeAddress(this.owner, 32));
-        } else {
-          this.$emit("owner", null);
+          try {
+            this.$emit("owner", encodeAddress(this.owner, 32));
+            return;
+          } catch (error) {
+            console.log(error);
+          }
         }
+        this.$emit("owner", null);
       }
     },
     validateUri: {

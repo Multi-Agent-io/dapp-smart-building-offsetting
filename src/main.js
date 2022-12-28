@@ -1,7 +1,8 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import Ipfs from "./ipfs";
+import filters from "./plugins/filters";
+import Ipfs from "./plugins/ipfs";
 
 const app = createApp(App);
 
-app.use(Ipfs).mount("#app");
+app.use(filters).use(Ipfs).mount("#app");
