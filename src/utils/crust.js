@@ -1,15 +1,23 @@
 import axios from "axios";
 
+const endpoints = [
+  "https://ipfs-gw.decloud.foundation",
+  "https://gw.crustfiles.net",
+  "https://gw.crustfiles.app",
+  "https://crustipfs.xyz",
+  "https://crustwebsites.net"
+];
+
 export default class Crust {
   constructor() {
     this.authHeader = null;
-    this.ipfs = axios.create({
-      baseURL: "https://ipfs-gw.decloud.foundation/api/v0"
-      // baseURL: 'https://crustwebsites.net/api/v0'
-      // baseURL: 'https://gw.crustapps.net/api/v0'
-    });
     this.pinner = axios.create({
       baseURL: "https://pin.crustcode.com/psa"
+    });
+  }
+  createNode(endpoint) {
+    this.ipfs = axios.create({
+      baseURL: `${endpoint}/api/v0`
     });
   }
   auth(address, signature) {
@@ -19,16 +27,25 @@ export default class Crust {
   async add(fileContent, name = "") {
     const formData = new FormData();
     formData.append("file", fileContent, name);
-    const res = await this.ipfs.post("/add?pin=true", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        authorization: `Basic ${this.authHeader}`
+    for (const endpoint of endpoints) {
+      this.createNode(endpoint);
+      try {
+        const res = await this.ipfs.post("/add", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            authorization: `Basic ${this.authHeader}`
+          }
+        });
+        if (res.status === 200 && res.data.Hash) {
+          return res.data.Hash;
+        } else {
+          console.log("ipfs gateway response", endpoint, res);
+        }
+      } catch (error) {
+        console.log("ipfs gateway error", endpoint, error);
       }
-    });
-    if (res.data.Hash) {
-      return res.data.Hash;
     }
-    throw new Error("file hash not received");
+    throw new Error("ipfs gateway error");
   }
   pin(cid, name = "") {
     return this.pinner.post(

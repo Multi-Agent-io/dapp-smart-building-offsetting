@@ -85,7 +85,7 @@ select {
   padding: 10px;
   color: #222222;
   background-color: #fff;
-  width: 400px;
+  width: 100%;
 }
 table {
   margin: 0;

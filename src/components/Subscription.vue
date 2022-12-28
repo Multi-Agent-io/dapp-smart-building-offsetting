@@ -6,9 +6,9 @@
       </div>
 
       <div>
-        <h3>Account</h3>
+        <h3>Owner account</h3>
 
-        <Account />
+        <input v-model="owner" />
 
         <div v-if="subscription.isActive.value" class="success">
           Subscription active till {{ subscription.validUntilFormat.value }}
@@ -20,7 +20,6 @@
         <h3>Controller</h3>
 
         <div>
-          <label>Account:</label>
           <select v-model="controller">
             <option
               v-for="(item, key) in devices"
@@ -44,28 +43,21 @@
 </template>
 
 <script>
-import { useAccount } from "@/hooks/useAccount";
 import { useDevices } from "@/hooks/useDevices";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Keyring } from "@polkadot/keyring";
 import { encodeAddress } from "@polkadot/util-crypto";
-import { onUnmounted, ref, watch } from "vue";
-import Account from "./Account.vue";
+import { ref, watch } from "vue";
 
 export default {
-  components: { Account },
   setup() {
+    const owner = ref("");
     const controller = ref("");
     const seed = ref("");
-    const { account, unsubscribe } = useAccount();
 
-    onUnmounted(() => {
-      unsubscribe();
-    });
+    const subscription = useSubscription(owner);
 
-    const subscription = useSubscription(account);
-
-    const { devices, loadDevices } = useDevices(account);
+    const { devices, loadDevices } = useDevices(owner);
 
     watch(devices, () => {
       if (devices.value.length) {
@@ -78,13 +70,13 @@ export default {
     return {
       controller,
       seed,
-      account,
+      owner,
       subscription,
       devices,
       loadDevices
     };
   },
-  emits: ["controller"],
+  emits: ["owner", "controller"],
   computed: {
     controllerAccount() {
       if (this.seed) {
@@ -110,6 +102,16 @@ export default {
     }
   },
   watch: {
+    owner: {
+      immediate: true,
+      handler() {
+        if (this.owner) {
+          this.$emit("owner", encodeAddress(this.owner, 32));
+        } else {
+          this.$emit("owner", null);
+        }
+      }
+    },
     validateUri: {
       immediate: true,
       handler() {

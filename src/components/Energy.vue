@@ -75,11 +75,9 @@
 </template>
 
 <script>
-import { useAccount } from "@/hooks/useAccount";
 import { u8aToHex, u8aToString } from "@polkadot/util";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { utils } from "robonomics-interface";
-import { onUnmounted } from "vue";
 import robonomics from "../robonomics";
 
 const LAST_BURN_DATE_QUERY_TOPIC = "last_burn_date_query";
@@ -87,18 +85,7 @@ const LAST_BURN_DATE_RESPONSE_TOPIC = "last_burn_date_response";
 const LIABILITY_QUERY_TOPIC = "liability_query";
 
 export default {
-  props: ["controller", "pubsub"],
-  setup() {
-    const { account, unsubscribe } = useAccount();
-
-    onUnmounted(() => {
-      unsubscribe();
-    });
-
-    return {
-      account
-    };
-  },
+  props: ["owner", "controller", "pubsub"],
   data() {
     return {
       loadDatalog: false,
@@ -124,8 +111,8 @@ export default {
   methods: {
     async crustAuth() {
       try {
-        const address = encodeAddress(this.accountManager.account.address, 66);
-        const signature = await this.accountManager.account.signMsg(address);
+        const address = encodeAddress(this.controller.address, 66);
+        const signature = u8aToHex(await this.controller.sign(address));
         this.$crust.auth(address, signature);
         this.isAuthorizedCrust = true;
       } catch (error) {
@@ -150,7 +137,9 @@ export default {
         const res = JSON.parse(this.decrypt(result));
         this.energy = res.energy;
         // eslint-disable-next-line no-empty
-      } catch (_) {}
+      } catch (e) {
+        console.log(e);
+      }
       this.loadDatalog = false;
     },
     async request() {
@@ -185,7 +174,7 @@ export default {
         LAST_BURN_DATE_QUERY_TOPIC,
         JSON.stringify({
           datetime: Date.now(),
-          address: this.account,
+          address: this.owner,
           kwh_current: this.energy.energy
         })
       );

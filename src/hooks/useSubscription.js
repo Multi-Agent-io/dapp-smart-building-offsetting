@@ -110,24 +110,24 @@ export const useSubscription = (initialOwner = null) => {
     return true;
   });
   const loadLedger = async () => {
-    console.log("loadLedger", owner.value);
-    try {
-      validateAddress(owner.value);
-      const ledger = await getLedger(owner.value);
-      if (ledger) {
-        console.log("test");
-        subscription.value = ledger;
-        console.log("print", subscription.value.toHuman());
-        return;
+    if (owner.value) {
+      try {
+        validateAddress(owner.value);
+        const ledger = await getLedger(owner.value);
+        if (ledger) {
+          subscription.value = ledger;
+          return;
+        }
+        // eslint-disable-next-line no-empty
+      } catch (e) {
+        console.log(e);
       }
-      // eslint-disable-next-line no-empty
-    } catch (_) {}
+    }
     subscription.value = null;
   };
   watch(
     owner,
     async () => {
-      console.log("watch", owner.value);
       await loadLedger();
     },
     {

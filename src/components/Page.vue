@@ -1,6 +1,11 @@
 <template>
   <div>
     <subscription
+      @owner="
+        result => {
+          owner = result;
+        }
+      "
       @controller="
         result => {
           controller = result;
@@ -16,7 +21,12 @@
       "
       class="block"
     />
-    <energy :controller="controller" :pubsub="pubsub" class="block" />
+    <energy
+      :owner="owner"
+      :controller="controller"
+      :pubsub="pubsub"
+      class="block"
+    />
   </div>
 </template>
 
@@ -29,6 +39,7 @@ export default {
   components: { Subscription, Pubsub, Energy },
   data() {
     return {
+      owner: null,
       controller: null,
       pubsub: false
     };
