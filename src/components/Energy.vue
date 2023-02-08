@@ -2,145 +2,115 @@
   <div>
     <div
       :disabled="!controller"
-      :loading="loadDatalog || (liability && liability.report === null)"
+      :loading="liability && liability.report === null"
     >
-      <div>
-        <h2>Energy</h2>
-      </div>
-      <div v-if="loadDatalog">
-        Load
-        <div>...</div>
-      </div>
-      <template v-else>
-        <template v-if="liability">
+      <template v-if="liability">
+        <div>
+          <h3>Liability</h3>
           <div>
-            <h3>Liability</h3>
-            <div>
-              <b>Technical</b>:
-              <a
-                :href="`https://ipfs.io/ipfs/${liability.technical}`"
-                target="_blank"
-              >
-                {{ liability.technical }} </a
-              ><br />
-              <b>Promisee</b>: {{ liability.promisee }}<br />
-              <b>Promisor</b>: {{ liability.promisor }}
-            </div>
+            <b>Technical</b>:
+            <a
+              :href="`https://ipfs.io/ipfs/${liability.technical}`"
+              target="_blank"
+            >
+              {{ liability.technical }} </a
+            ><br />
+            <b>Promisee</b>: {{ liability.promisee }}<br />
+            <b>Promisor</b>: {{ liability.promisor }}
+          </div>
 
-            <h3>Report</h3>
-            <div>
-              <a
-                v-if="liability.reportHash"
-                :href="`http://ipfs.io/ipfs/${liability.reportHash}`"
-                target="_blank"
-              >
-                {{ liability.reportHash }}
-              </a>
-              <div v-else-if="!liability.report">...</div>
-              <a v-else :href="liability.report" target="_blank">
-                {{ liability.report }}
-              </a>
-            </div>
-          </div>
-        </template>
-        <template v-else-if="lastBurnDate">
-          <h3>Burn</h3>
+          <h3>Report</h3>
           <div>
-            <div>Last burn date: {{ lastBurnDate }}</div>
-            <div>{{ kwhToBurn }} kwh</div>
+            <a
+              v-if="liability.reportHash"
+              :href="`http://ipfs.io/ipfs/${liability.reportHash}`"
+              target="_blank"
+            >
+              {{ liability.reportHash }}
+            </a>
+            <div v-else-if="!liability.report">...</div>
+            <a v-else :href="liability.report" target="_blank">
+              {{ liability.report }}
+            </a>
           </div>
-          <button v-if="!isAuthorizedCrust" @click.stop.prevent="crustAuth">
-            crust auth
-          </button>
-          <div v-else @click="burn" :loading="isLoadBurn">Burn</div>
-          <div v-if="errorBurn" class="error">{{ errorBurn }}</div>
-        </template>
-        <template v-else-if="energy">
-          <h3>Energy</h3>
-          <div>
-            <div>{{ energy.energy }} kWh</div>
-          </div>
-          <button @click="request" :disabled="isLoadRequest">Request</button>
-          <div v-if="errorRequest" class="error">{{ errorRequest }}</div>
-        </template>
+        </div>
+      </template>
+      <template v-else-if="lastBurnDate">
+        <h3>Burn</h3>
+        <div>
+          <div>Last compensation date: {{ lastBurnDate }}</div>
+          <div>{{ kwhToBurn }} kwh</div>
+          <div>IPFS gateway: <input v-model="gateway" /></div>
+        </div>
+        <button v-if="!isAuthorizedCrust" @click.stop.prevent="crustAuth">
+          ipfs auth
+        </button>
         <template v-else>
-          <h3>Energy</h3>
           <div>
-            <div>not found</div>
+            <div>geo: <input v-model="geo" /></div>
           </div>
+          <button @click="burn" :loading="isLoadBurn">Compensation</button>
         </template>
+        <div v-if="errorBurn" class="error">{{ errorBurn }}</div>
+      </template>
+      <template v-else>
+        <h3>Energy</h3>
+        <div>
+          <div><input v-model="energy" /> kWh</div>
+        </div>
+        <button @click="request" :disabled="isLoadRequest">Request</button>
+        <div v-if="errorRequest" class="error">{{ errorRequest }}</div>
       </template>
     </div>
   </div>
 </template>
 
 <script>
-import { u8aToHex, u8aToString } from "@polkadot/util";
+import { stringToU8a, u8aToHex } from "@polkadot/util";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { utils } from "robonomics-interface";
+import config from "../config";
 import robonomics from "../robonomics";
 
-const LAST_BURN_DATE_QUERY_TOPIC = "last_burn_date_query";
-const LAST_BURN_DATE_RESPONSE_TOPIC = "last_burn_date_response";
-const LIABILITY_QUERY_TOPIC = "liability_query";
-
 export default {
-  props: ["owner", "controller", "pubsub"],
+  props: ["owner", "controller"],
   data() {
     return {
-      loadDatalog: false,
-      energy: null,
+      energy: 10,
+      geo: "",
       lastBurnDate: null,
       kwhToBurn: null,
+      // energy: 10,
+      // geo: "59.934280, 30.335099",
+      // lastBurnDate: "-",
+      // kwhToBurn: 5,
       liability: null,
       isLoadRequest: false,
       errorRequest: null,
       isLoadBurn: false,
       errorBurn: null,
-      isAuthorizedCrust: false
+      isAuthorizedCrust: false,
+      gateway: config.GATEWAY
     };
-  },
-  async created() {
-    this.getEnergyFromDatalog();
-  },
-  watch: {
-    controller() {
-      this.getEnergyFromDatalog();
-    }
   },
   methods: {
     async crustAuth() {
       try {
         const address = encodeAddress(this.controller.address, 66);
-        const signature = u8aToHex(await this.controller.sign(address));
+
+        let signature;
+        if (this.controller.signMsg) {
+          signature = (
+            await this.controller.signMsg(stringToU8a(address))
+          ).toString();
+        } else {
+          signature = u8aToHex(await this.controller.sign(address));
+        }
         this.$crust.auth(address, signature);
         this.isAuthorizedCrust = true;
       } catch (error) {
         console.log(error);
       }
-    },
-    async getEnergyFromDatalog() {
-      if (!this.controller) {
-        this.energy = null;
-        this.lastBurnDate = null;
-        this.kwhToBurn = null;
-        return;
-      }
-      this.loadDatalog = true;
-      try {
-        const log = await robonomics.datalog.read(
-          encodeAddress(this.controller.address, 32)
-        );
-        const result = await this.$crust.catFile(
-          log[log.length - 1][1].toHuman()
-        );
-        const res = JSON.parse(this.decrypt(result));
-        this.energy = res.energy;
-        // eslint-disable-next-line no-empty
-      } catch (e) {
-        console.log(e);
-      }
-      this.loadDatalog = false;
     },
     async request() {
       this.isLoadRequest = true;
@@ -148,19 +118,18 @@ export default {
       this.lastBurnDate = null;
       this.kwhToBurn = null;
       const subscriber = robonomics.api.rpc.pubsub.subscribe(
-        LAST_BURN_DATE_RESPONSE_TOPIC,
+        config.LAST_BURN_DATE_RESPONSE_TOPIC,
         obj => {
           try {
             const data = JSON.parse(obj.data.toHuman());
-            console.log(data);
 
-            if (data.last_burn_date === "None") {
+            if (data.last_compensation_date === "None") {
               this.lastBurnDate = "-";
             } else {
-              this.lastBurnDate = data.last_burn_date;
+              this.lastBurnDate = data.last_compensation_date;
             }
 
-            this.kwhToBurn = data.kwh_to_burn;
+            this.kwhToBurn = data.kwh_to_compensate;
           } catch (error) {
             console.log(error, obj.data.toHuman());
           }
@@ -171,11 +140,11 @@ export default {
         }
       );
       const result = await robonomics.api.rpc.pubsub.publish(
-        LAST_BURN_DATE_QUERY_TOPIC,
+        config.LAST_BURN_DATE_QUERY_TOPIC,
         JSON.stringify({
-          datetime: Date.now(),
+          timestamp: Date.now(),
           address: this.owner,
-          kwh_current: this.energy.energy
+          kwh_current: this.energy
         })
       );
       console.log("pubsub publish", result.toHuman());
@@ -193,10 +162,11 @@ export default {
 
       const hash = await this.$crust.add(
         JSON.stringify({
-          geo: this.energy.geo,
-          kwh: this.energy.energy
+          geo: this.geo,
+          kwh: this.energy
         }),
-        "burn"
+        "burn",
+        [this.gateway]
       );
 
       const technics = utils.cidToHex(hash);
@@ -228,7 +198,7 @@ export default {
               const ipfsHash = utils.hexToCid(item.data.payload);
 
               this.$crust
-                .catFile(ipfsHash)
+                .catFile(ipfsHash, this.gateway)
                 .then(r => {
                   try {
                     console.log(r);
@@ -249,7 +219,7 @@ export default {
       });
       console.log(
         JSON.stringify({
-          datetime: Date.now(),
+          timestamp: Date.now(),
           technics: hash,
           economics: economics,
           promisee: encodeAddress(this.controller.address, 32),
@@ -259,9 +229,9 @@ export default {
         })
       );
       const result = await robonomics.api.rpc.pubsub.publish(
-        LIABILITY_QUERY_TOPIC,
+        config.LIABILITY_QUERY_TOPIC,
         JSON.stringify({
-          datetime: Date.now(),
+          timestamp: Date.now(),
           technics: hash,
           economics: economics,
           promisee: encodeAddress(this.controller.address, 32),
@@ -282,14 +252,10 @@ export default {
         technics,
         economics
       );
+      if (this.controller.signMsg) {
+        return (await this.controller.signMsg(stringToU8a(data))).toString();
+      }
       return u8aToHex(await this.controller.sign(data));
-    },
-    decrypt(encryptMessage) {
-      const decryptMessage = this.controller.decryptMessage(
-        encryptMessage,
-        this.controller.publicKey
-      );
-      return u8aToString(decryptMessage);
     }
   }
 };

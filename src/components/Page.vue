@@ -1,5 +1,6 @@
 <template>
   <div>
+    <account />
     <subscription
       @owner="
         result => {
@@ -13,35 +14,28 @@
       "
       class="block"
     />
-    <pubsub
-      @listen="
-        result => {
-          pubsub = result;
-        }
-      "
-      class="block"
-    />
+    <pubsub class="block" />
     <energy
+      v-if="controller"
       :owner="owner"
       :controller="controller"
-      :pubsub="pubsub"
       class="block"
     />
   </div>
 </template>
 
 <script>
+import Account from "./Account.vue";
 import Energy from "./Energy.vue";
 import Pubsub from "./Pubsub.vue";
 import Subscription from "./Subscription.vue";
 
 export default {
-  components: { Subscription, Pubsub, Energy },
+  components: { Account, Subscription, Pubsub, Energy },
   data() {
     return {
       owner: null,
-      controller: null,
-      pubsub: false
+      controller: null
     };
   }
 };

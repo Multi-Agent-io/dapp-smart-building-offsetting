@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const endpoints = [
+const defaultEndpoints = [
   "https://ipfs-gw.decloud.foundation",
   "https://gw.crustfiles.net",
   "https://gw.crustfiles.app",
@@ -24,10 +24,18 @@ export default class Crust {
     const authHeaderRaw = `sub-${address}:${signature}`;
     this.authHeader = Buffer.from(authHeaderRaw).toString("base64");
   }
-  async add(fileContent, name = "") {
+  async add(fileContent, name = "", endpoints = null) {
     const formData = new FormData();
-    formData.append("file", fileContent, name);
-    for (const endpoint of endpoints) {
+
+    if (typeof fileContent === "string") {
+      formData.append("file", fileContent);
+    } else {
+      formData.append("file", fileContent, name);
+    }
+
+    const nodes = endpoints === null ? defaultEndpoints : endpoints;
+
+    for (const endpoint of nodes) {
       this.createNode(endpoint);
       try {
         const res = await this.ipfs.post("/add", formData, {

@@ -29,12 +29,15 @@
           </select>
         </div>
 
+        <div v-if="extension" class="success">Account from extension</div>
+
+        <!-- <template v-if="!extension"> -->
         <div>
           <label>Seed phrase to encrypt data:</label>
           <input v-model="seed" type="password" />
         </div>
-
         <div v-if="seed && !validateUri" class="error">Wrong seed phrase</div>
+        <!-- </template> -->
       </div>
     </div>
   </div>
@@ -44,29 +47,24 @@
 import { useSubscription } from "@/hooks/useSubscription";
 import { Keyring } from "@polkadot/keyring";
 import { encodeAddress } from "@polkadot/util-crypto";
-import { ref, watch } from "vue";
+import { ref } from "vue";
+import robonomics from "../robonomics";
 
 export default {
   setup() {
     const owner = ref("");
     const controller = ref("");
     const seed = ref("");
+    const extension = ref(false);
 
     const subscription = useSubscription(owner);
-
-    watch(subscription.devices, () => {
-      if (subscription.devices.value.length) {
-        controller.value = subscription.devices.value[0];
-      } else {
-        controller.value = "";
-      }
-    });
 
     return {
       controller,
       seed,
       owner,
-      subscription
+      subscription,
+      extension
     };
   },
   emits: ["owner", "controller"],
@@ -84,6 +82,7 @@ export default {
     },
     validateUri() {
       if (
+        this.seed &&
         this.controllerAccount &&
         this.controller &&
         encodeAddress(this.controller) ===
@@ -109,13 +108,29 @@ export default {
         this.$emit("owner", null);
       }
     },
+    async controller() {
+      if (this.controller && robonomics.accountManager.isReady) {
+        try {
+          await robonomics.accountManager.selectAccountByAddress(
+            this.controller
+          );
+          this.extension = true;
+          this.$emit("controller", robonomics.accountManager.account);
+        } catch (error) {
+          this.extension = false;
+          console.log(error.message);
+        }
+      }
+    },
     validateUri: {
       immediate: true,
       handler() {
-        if (this.validateUri) {
-          this.$emit("controller", this.controllerAccount);
-        } else {
-          this.$emit("controller", null);
+        if (this.seed) {
+          if (this.validateUri) {
+            this.$emit("controller", this.controllerAccount);
+          } else {
+            this.$emit("controller", null);
+          }
         }
       }
     }
