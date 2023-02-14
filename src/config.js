@@ -4,5 +4,5 @@ export default {
   LIABILITY_QUERY_TOPIC: "liability_query",
 
   CONNECT_MULTIADDR: "/dns/robonomics.rpc.multi-agent.io/tcp/44440",
-  GATEWAY: "https://ipfs-gateway.multi-agent.io/"
+  GATEWAY: "https://ipfs-gateway.multi-agent.io"
 };

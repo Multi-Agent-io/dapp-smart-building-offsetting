@@ -40,7 +40,6 @@
         <div>
           <div>Last compensation date: {{ lastBurnDate }}</div>
           <div>{{ kwhToBurn }} kwh</div>
-          <div>IPFS gateway: <input v-model="gateway" /></div>
         </div>
         <button v-if="!isAuthorizedCrust" @click.stop.prevent="crustAuth">
           ipfs auth

@@ -14,7 +14,7 @@
       "
       class="block"
     />
-    <pubsub class="block" />
+    <pubsub />
     <energy
       v-if="controller"
       :owner="owner"

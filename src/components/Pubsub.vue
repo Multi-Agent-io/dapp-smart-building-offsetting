@@ -1,19 +1,3 @@
-<template>
-  <div>
-    <div>
-      <div>
-        <h2>Pubsub</h2>
-      </div>
-      <div>
-        <div>Connect multiaddr</div>
-        <div>
-          <input v-model="connectMultiaddr" type="text" />
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script>
 import config from "../config";
 import robonomics from "../robonomics";
