@@ -67,7 +67,7 @@ export default {
       extension
     };
   },
-  emits: ["owner", "controller"],
+  emits: ["controller"],
   computed: {
     controllerAccount() {
       if (this.seed) {
@@ -94,20 +94,6 @@ export default {
     }
   },
   watch: {
-    owner: {
-      immediate: true,
-      handler() {
-        if (this.owner) {
-          try {
-            this.$emit("owner", encodeAddress(this.owner, 32));
-            return;
-          } catch (error) {
-            console.log(error);
-          }
-        }
-        this.$emit("owner", null);
-      }
-    },
     async controller() {
       if (this.controller && robonomics.accountManager.isReady) {
         try {

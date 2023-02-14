@@ -2,11 +2,6 @@
   <div>
     <account />
     <subscription
-      @owner="
-        result => {
-          owner = result;
-        }
-      "
       @controller="
         result => {
           controller = result;
@@ -15,12 +10,7 @@
       class="block"
     />
     <pubsub />
-    <energy
-      v-if="controller"
-      :owner="owner"
-      :controller="controller"
-      class="block"
-    />
+    <energy v-if="controller" :controller="controller" class="block" />
   </div>
 </template>
 
@@ -34,7 +24,6 @@ export default {
   components: { Account, Subscription, Pubsub, Energy },
   data() {
     return {
-      owner: null,
       controller: null
     };
   }

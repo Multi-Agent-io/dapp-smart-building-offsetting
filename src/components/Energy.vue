@@ -72,7 +72,7 @@ import config from "../config";
 import robonomics from "../robonomics";
 
 export default {
-  props: ["owner", "controller"],
+  props: ["controller"],
   data() {
     return {
       energy: 10,
@@ -142,7 +142,7 @@ export default {
         config.LAST_BURN_DATE_QUERY_TOPIC,
         JSON.stringify({
           timestamp: Date.now(),
-          address: this.owner,
+          address: this.controller.address,
           kwh_current: this.energy
         })
       );
