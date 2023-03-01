@@ -1,7 +1,8 @@
-import Crust from "../utils/crust";
+import config from "../config";
+import Ipfs from "../utils/ipfs";
 
 export default {
   install: app => {
-    app.config.globalProperties.$crust = new Crust();
+    app.config.globalProperties.$ipfs = new Ipfs(config.GATEWAY);
   }
 };

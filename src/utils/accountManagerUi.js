@@ -25,17 +25,9 @@ function onLoadExtensions() {
 
 let extensions = [];
 export default class AccountManagerUi extends AccountManager {
-  /**
-   * @param {import('@polkadot/ui-keyring').Keyring} keyring
-   * @param {import('@polkadot/api').ApiPromise} api
-   */
   constructor(keyring, api = null) {
     super(keyring, api);
   }
-  /**
-   * @param {import('@polkadot/ui-keyring').Keyring} keyring
-   * @param {Object} config
-   */
 
   static async initPlugin(keyring, config = {}) {
     await onLoadExtensions();
@@ -90,7 +82,9 @@ export default class AccountManagerUi extends AccountManager {
         ).signature;
       };
     } else {
-      await super.mixin();
+      this.account.signMsg = async data => {
+        return Promise.resolve(u8aToHex(this.account.sign(data)));
+      };
     }
   }
 }

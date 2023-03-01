@@ -1,4 +1,4 @@
-# dapp smart building offsetting
+# DAO IPCI smart building offsetting
 
 ## Project setup
 ```
