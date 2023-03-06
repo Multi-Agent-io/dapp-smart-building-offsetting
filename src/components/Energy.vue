@@ -47,6 +47,7 @@
       <template v-else>
         <div>
           <div>geo: <input v-model="geo" /></div>
+          <div>seed: <input v-model="seed" /></div>
         </div>
         <button @click="burn" :loading="isLoadBurn">Compensation</button>
       </template>
@@ -64,11 +65,15 @@
 </template>
 
 <script>
-import { stringToU8a } from "@polkadot/util";
+import { stringToU8a, u8aToHex } from "@polkadot/util";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { utils } from "robonomics-interface";
 import config from "../config";
 import robonomics from "../robonomics";
+
+import { Keyring } from "@polkadot/keyring";
+
+const keyring = new Keyring();
 
 export default {
   data() {
@@ -87,7 +92,8 @@ export default {
       isLoadBurn: false,
       errorBurn: null,
       isAccount: false,
-      isAuthorizedCrust: false
+      isAuthorizedCrust: false,
+      seed: ""
     };
   },
   created() {
@@ -170,7 +176,14 @@ export default {
       const technics = utils.cidToHex(hash);
 
       const economics = 0;
+
+      if (!this.seed) {
+        this.errorBurn = "Error: Seed required";
+        return;
+      }
+
       const signature = await this.signData(technics, economics);
+
       const unsubscribeLiability = await robonomics.liability.on({}, r => {
         for (const item of r) {
           if (item.event === "NewLiability") {
@@ -227,7 +240,8 @@ export default {
             32
           ),
           promisee_signature: {
-            [robonomics.accountManager.account.type.toUpperCase()]: signature
+            [robonomics.accountManager.account.type.charAt(0).toUpperCase() +
+            robonomics.accountManager.account.type.slice(1)]: signature
           }
         })
       );
@@ -242,7 +256,8 @@ export default {
             32
           ),
           promisee_signature: {
-            [robonomics.accountManager.account.type.toUpperCase()]: signature
+            [robonomics.accountManager.account.type.charAt(0).toUpperCase() +
+            robonomics.accountManager.account.type.slice(1)]: signature
           }
         })
       );
@@ -254,13 +269,13 @@ export default {
       }
     },
     async signData(technics, economics) {
+      const acc = keyring.addFromUri(this.seed);
       const { data } = robonomics.liability.getDataLiability(
         technics,
         economics
       );
-      return (
-        await robonomics.accountManager.account.signMsg(stringToU8a(data))
-      ).toString();
+      return u8aToHex(acc.sign(data));
+      // return (await robonomics.accountManager.account.signMsg(data)).toString();
     }
   }
 };
